@@ -8,4 +8,4 @@ The program also uses PVector class and some other couple methods, roughly taken
 
 Basically this is just a personal challenge to start digging in genetic algorithms and i haven't made great additions to Daniel's code.
 
-A huge thanks goes to [Daniel Shiffman] (https://github.com/shiffman)
+A huge thanks goes to [Daniel Shiffman](https://github.com/shiffman)
