@@ -5,7 +5,7 @@ public class Main {
 
     public static void main (String... args){
         EventQueue.invokeLater(() -> {
-            JFrame frame = new JFrame("GAME OF LIFE");
+            JFrame frame = new JFrame("EVOLUTIONARY STEERING BEHAVIORS");
             GamePanel panel = new GamePanel();
             panel.setPreferredSize(Toolkit.getDefaultToolkit().getScreenSize());
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
