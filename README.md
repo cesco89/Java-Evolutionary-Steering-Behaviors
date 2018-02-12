@@ -11,4 +11,4 @@ Basically this is just a personal challenge to start digging in genetic algorith
 A huge thanks goes to [Daniel Shiffman](https://github.com/shiffman)
 
 -------
-![Screenshot](/screenshot/screen.png)
+![Screenshot](/screenshot/Screen.PNG)
