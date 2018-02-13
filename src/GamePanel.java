@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public class GamePanel extends JPanel implements ActionListener, MouseListener {
 
-    Timer timer = new Timer(10, this);
+    Timer timer = new Timer(5, this);
     private static int width = Toolkit.getDefaultToolkit().getScreenSize().width;
     private static int height = Toolkit.getDefaultToolkit().getScreenSize().height - 100;
     private ArrayList<Vehicle> population;
@@ -13,8 +13,8 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
     private ArrayList<PVector> poison;
     private double[] nutrition = {0.1, -1};
 
-    private double foodRate = 0.2;
-    private double poisonRate = 0.01;
+    private double foodRate = 0.5;
+    private double poisonRate = 0.05;
     private double factor = 1.001;
     private int maxPopulation = 20;
 
@@ -39,7 +39,7 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
             population.add(new Vehicle(width / 2, height / 2));
         }
 
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 30; i++) {
             food.add(new PVector((float) Math.random() * width, (float) Math.random() * height));
         }
 
@@ -59,6 +59,7 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
         }
 
         //BIRTH CONTROL MADE EASY! (well, sort of)
+        /**
         if (population.size() > maxPopulation) {
             foodRate = foodRate / factor;
             poisonRate = poisonRate * factor;
@@ -72,13 +73,15 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
             foodRate = 0.1;
             poisonRate = 0.01;
         }
+         **/
 
         for (int i = 0; i < population.size(); i++) {
             Vehicle v = population.get(i);
-            v.eat(food, 0, nutrition);
-            v.eat(poison, 1, nutrition);
-            v.boundaries(width, height);
-            v.update();
+            v.eat(population, food, 0, nutrition);
+            v.eat(population,poison, 1, nutrition);
+            //v.boundaries(width, height);
+            //v.update();
+            v.run(population, width, height);
             v.display(population, i, g);
 
             if (v.dead()) {

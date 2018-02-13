@@ -11,13 +11,16 @@ public class Vehicle {
     private double maxforce = 0.5;
     private float maxspeed = 3;
     private double[] dna;
-    private float health = 3;
-    private double eatPrecision = 5;
+    private float health = 5;
+    private double eatPrecision = 10;
     private int x;
     private int y;
 
+    //private double flockingRange = GamePanel.radius *3;
+
     //set to false to remove food/poison attraction circles
-    private boolean debug = true;
+    private boolean debug = false;
+    private boolean debugFlock = true;
 
     Vehicle(int x, int y) {
         this(x, y, null);
@@ -53,15 +56,31 @@ public class Vehicle {
 
         } else {
             int maxf = 3;
-            this.dna = new double[4];
+            this.dna = new double[5];
             this.dna[0] = randomInRange(-maxf, maxf);
             this.dna[1] = randomInRange(-maxf, maxf);
             this.dna[2] = randomInRange(5, 100);
             this.dna[3] = randomInRange(5, 100);
+            this.dna[4] = randomInRange(radius, radius*2);
         }
 
         this.health = 1;
 
+    }
+
+
+    void flock(ArrayList<Vehicle> vehicles) {
+        PVector sep = separate(vehicles);   // Separation
+        PVector ali = align(vehicles);      // Alignment
+        PVector coh = cohesion(vehicles);   // Cohesion
+        // Arbitrarily weight these forces
+        sep.mult(1.5f);
+        ali.mult(1.0f);
+        coh.mult(1.0f);
+        // Add the force vectors to acceleration
+        applyForce(sep);
+        applyForce(ali);
+        applyForce(coh);
     }
 
     public void update() {
@@ -86,7 +105,7 @@ public class Vehicle {
         return null;
     }
 
-    public void eat(ArrayList<PVector> list, int index, double[] nutrition) {
+    public void eat(ArrayList<Vehicle> population, ArrayList<PVector> list, int index, double[] nutrition) {
         PVector closest = null;
         Double closestD = Double.POSITIVE_INFINITY;
         for (int i = list.size() - 1; i >= 0; i--) {
@@ -99,6 +118,12 @@ public class Vehicle {
                 //System.out.println("EATING SOMETHING");
                 list.remove(i);
                 this.health += nutrition[index];
+                if (index == 0) {
+                    this.dna[index] -= 0.01;
+                } else if (index == 1) {
+                    this.dna[index] += 0.01;
+                }
+                checkFlocked(population, index, nutrition);
             }
         }
 
@@ -109,6 +134,24 @@ public class Vehicle {
             sk.limit((float) this.maxforce);
             //System.out.println("STEERING!");
             this.applyForce(sk);
+        }
+    }
+
+    private void checkFlocked(ArrayList<Vehicle> population, int index, double[] nutrition) {
+        for (int i = 0; i < population.size(); i++) {
+            Vehicle v = population.get(i);
+            float d = PVector.dist(v.position, this.position);
+            if (d < this.dna[4]) {
+                if (index == 0) {
+                    v.dna[index] -= 0.01;
+                } else if (index == 1) {
+                    v.dna[index] += 0.01;
+                }
+                if(this.dna[4] < radius*3) {
+                    this.dna[4] += 0.1;
+                }
+                v.health += nutrition[index];
+            }
         }
     }
 
@@ -132,6 +175,12 @@ public class Vehicle {
         return (Min + (Math.random() * ((Max - Min) + 1)));
     }
 
+    void run(ArrayList<Vehicle> vehicles, int width, int height) {
+        flock(vehicles);
+        update();
+        boundaries(width, height);
+    }
+
 
     public void display(ArrayList<Vehicle> population, int position, Graphics2D g) {
         int blue = Color.GREEN.getRGB();
@@ -147,16 +196,29 @@ public class Vehicle {
 
         if (debug) {
 
-            // Circle and line for food
+            int index1 = 2; //default 2
+            int index2 = 3; //default 3
+            int r1 = (int) this.dna[index1] * 2;
+            int r2 = (int) this.dna[index2] * 2;
+            int x1 = (int) this.position.x - ((int) this.dna[index1]) + (radius / 2);
+            int y1 = (int) this.position.y - ((int) this.dna[index1]) + (radius / 2);
+            int x2 = (int) this.position.x - ((int) this.dna[index2]) + (radius / 2);
+            int y2 = (int) this.position.y - ((int) this.dna[index2]) + (radius / 2);
+
+
             g.setColor(Color.GREEN);
-            g.drawOval((int) this.position.x - ((int) this.dna[2]) + radius/2, (int) this.position.y  - ((int) this.dna[2]) + radius/2, (int) this.dna[2]*2, (int) this.dna[2]*2);
+            g.drawOval(x1, y1, r1, r1);
 
             g.setColor(Color.RED);
-            // Circle and line for poison
-            g.drawOval((int) this.position.x - ((int) this.dna[3]) + radius/2, (int) this.position.y  - ((int) this.dna[3]) + radius/2, (int) this.dna[3]*2, (int) this.dna[3]*2);
+            g.drawOval(x2, y2, r2, r2);
 
             g.setColor(Color.BLACK);
 
+        } else if (debugFlock) {
+            int x1 = (int) this.position.x - ((int) this.dna[4] ) + (radius/2) + ((int) this.dna[4]/2);
+            int y1 = (int) this.position.y - ((int) this.dna[4] ) + (radius/2) + ((int) this.dna[4]/2);
+            g.setColor(Color.GREEN);
+            g.drawOval(x1, y1, (int) this.dna[4], (int) this.dna[4]);
         }
 
     }
@@ -184,6 +246,92 @@ public class Vehicle {
         }
 
 
+    }
+
+    PVector separate(ArrayList<Vehicle> vehicles) {
+        float desiredseparation = 25.0f;
+        PVector steer = new PVector(0, 0, 0);
+        int count = 0;
+        // For every boid in the system, check if it's too close
+        for (Vehicle other : vehicles) {
+            float d = PVector.dist(position, other.position);
+            // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
+            if ((d > 0) && (d < desiredseparation)) {
+                // Calculate vector pointing away from neighbor
+                PVector diff = PVector.sub(position, other.position);
+                diff.normalize();
+                diff.div(d);        // Weight by distance
+                steer.add(diff);
+                count++;            // Keep track of how many
+            }
+        }
+        // Average -- divide by how many
+        if (count > 0) {
+            steer.div((float) count);
+        }
+
+        // As long as the vector is greater than 0
+        if (steer.mag() > 0) {
+            // Implement Reynolds: Steering = Desired - Velocity
+            steer.normalize();
+            steer.mult(maxspeed);
+            steer.sub(velocity);
+            steer.limit((float) maxforce);
+        }
+        return steer;
+    }
+
+    private PVector align(ArrayList<Vehicle> vehicles) {
+        float neighbordist = 50;
+        PVector sum = new PVector(0, 0);
+        int count = 0;
+        for (Vehicle other : vehicles) {
+            float d = PVector.dist(position, other.position);
+            if ((d > 0) && (d < neighbordist)) {
+                sum.add(other.velocity);
+                count++;
+            }
+        }
+        if (count > 0) {
+            sum.div((float) count);
+            sum.normalize();
+            sum.mult(maxspeed);
+            PVector steer = PVector.sub(sum, velocity);
+            steer.limit((float) maxforce);
+            return steer;
+        } else {
+            return new PVector(0, 0);
+        }
+    }
+
+    private PVector cohesion(ArrayList<Vehicle> vehicles) {
+        float neighbordist = 50;
+        PVector sum = new PVector(0, 0);   // Start with empty vector to accumulate all positions
+        int count = 0;
+        for (Vehicle other : vehicles) {
+            float d = PVector.dist(position, other.position);
+            if ((d > 0) && (d < neighbordist)) {
+                sum.add(other.position); // Add position
+                count++;
+            }
+        }
+        if (count > 0) {
+            sum.div(count);
+            return seekNei(sum);  // Steer towards the position
+        } else {
+            return new PVector(0, 0);
+        }
+    }
+
+    private PVector seekNei(PVector target) {
+        PVector desired = PVector.sub(target, position);  // A vector pointing from the position to the target
+        // Normalize desired and scale to maximum speed
+        desired.normalize();
+        desired.mult(maxspeed);
+        // Steering = Desired minus Velocity
+        PVector steer = PVector.sub(desired, velocity);
+        steer.limit((float) maxforce);  // Limit to maximum steering force
+        return steer;
     }
 
 }
