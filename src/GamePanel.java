@@ -13,10 +13,13 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
     private ArrayList<PVector> poison;
     private double[] nutrition = {0.1, -1};
 
-    private double foodRate = 0.1;
+    private double foodRate = 0.2;
     private double poisonRate = 0.01;
     private double factor = 1.001;
     private int maxPopulation = 20;
+
+    public static int radius = 25;
+    private int fpRadius = radius/2;
 
     public GamePanel() {
         setOpaque(true);
@@ -62,6 +65,9 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
         } else if (population.size() > 0 && population.size() < maxPopulation) {
             foodRate = foodRate * factor;
             poisonRate = poisonRate / factor;
+            if(poison.size() > food.size()) {
+                poison.remove((int)randomInRange(0, poison.size()-1));
+            }
         } else {
             foodRate = 0.1;
             poisonRate = 0.01;
@@ -91,7 +97,7 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
             PVector f = food.get(i);
 
             //System.out.println("DRAWING FOOD @" + f.x +"||"+ f.y);
-            g.fillOval((int) f.x, (int) f.y, 10, 10);
+            g.fillOval((int) f.x, (int) f.y, fpRadius, fpRadius);
             g.setColor(Color.BLACK);
         }
 
@@ -99,9 +105,14 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
             g.setColor(Color.RED);
             PVector p = poison.get(i);
             //System.out.println("DRAWING POISON @" + p.x +"||"+ p.y);
-            g.fillOval((int) p.x, (int) p.y, 10, 10);
+            g.fillOval((int) p.x, (int) p.y, fpRadius, fpRadius);
             g.setColor(Color.BLACK);
         }
+    }
+
+    //I'M lazy - copied from Vehicle class lol
+    private double randomInRange(double Min, double Max) {
+        return (Min + (Math.random() * ((Max - Min) + 1)));
     }
 
 

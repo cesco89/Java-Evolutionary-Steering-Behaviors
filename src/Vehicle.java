@@ -7,11 +7,12 @@ public class Vehicle {
     private PVector acceleration;
     private PVector velocity;
     private PVector position;
-    private int radius = 20;
+    private int radius = GamePanel.radius;
     private double maxforce = 0.5;
     private float maxspeed = 3;
     private double[] dna;
-    private float health = 5;
+    private float health = 3;
+    private double eatPrecision = 5;
     private int x;
     private int y;
 
@@ -23,7 +24,7 @@ public class Vehicle {
     }
 
     private Vehicle(int x, int y, double[] dna) {
-        this.dna = new double[4];
+        this.dna = new double[5];
         this.x = x;
         this.y = y;
         this.acceleration = new PVector();
@@ -77,9 +78,9 @@ public class Vehicle {
     }
 
     public Vehicle birth() {
-        if (Math.random() < 0.001) {
+        if (Math.random() < 0.0008) {
             Vehicle child = new Vehicle(this.x, this.y, this.dna);
-            child.health += 0.001;
+            child.health += 0.01;
             return child;
         }
         return null;
@@ -94,7 +95,7 @@ public class Vehicle {
                 closestD = (double) d;
                 closest = list.get(i);
             }
-            if (d < (radius/2)) {
+            if (d < (eatPrecision)) {
                 //System.out.println("EATING SOMETHING");
                 list.remove(i);
                 this.health += nutrition[index];
@@ -148,11 +149,11 @@ public class Vehicle {
 
             // Circle and line for food
             g.setColor(Color.GREEN);
-            g.drawOval((int) this.position.x - ((int) this.dna[2] / 2) + radius/2, (int) this.position.y  - ((int) this.dna[2] / 2) + radius/2, (int) this.dna[2], (int) this.dna[2]);
+            g.drawOval((int) this.position.x - ((int) this.dna[2]) + radius/2, (int) this.position.y  - ((int) this.dna[2]) + radius/2, (int) this.dna[2]*2, (int) this.dna[2]*2);
 
             g.setColor(Color.RED);
             // Circle and line for poison
-            g.drawOval((int) this.position.x - ((int) this.dna[3] / 2) + radius/2, (int) this.position.y  - ((int) this.dna[3] / 2) + radius/2, (int) this.dna[3], (int) this.dna[3]);
+            g.drawOval((int) this.position.x - ((int) this.dna[3]) + radius/2, (int) this.position.y  - ((int) this.dna[3]) + radius/2, (int) this.dna[3]*2, (int) this.dna[3]*2);
 
             g.setColor(Color.BLACK);
 
@@ -166,7 +167,7 @@ public class Vehicle {
         if (this.position.x < d) {
             desired = new PVector(this.maxspeed, this.velocity.y);
         } else if (this.position.x > width - d) {
-            desired = new PVector(this.maxspeed, -this.velocity.y);
+            desired = new PVector(-this.maxspeed, -this.velocity.y);
         }
 
         if (this.position.y < d) {
